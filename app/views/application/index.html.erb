@@ -1,0 +1,12 @@
+<% @posts.each do |post| %>
+  <div class="card bg-light">
+  <div class="card-header"><h2><%= post.title  %></h2></div>
+    <div class="card-body"> 
+      <%= truncate(strip_tags(post.body.to_s), length: 50)  %>
+    </div>
+    <div class="card-footer">
+    <h6> Created at <%= time_ago_in_words(post.created_at) %> ago</h6>
+    </div>
+  </div>
+<br>
+<% end %>
