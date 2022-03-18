@@ -13,15 +13,15 @@
 
   <div>
     <%= form.label :title, style: "display: block" %>
-    <%= form.text_field :title %>
+    <%= form.text_field :title, class: "form-control" %>
   </div>
 
   <div>
     <%= form.label :body, style: "display: block" %>
-    <%= form.rich_text_area :body %>
+    <%= form.rich_text_area :body, class: "form-control" %>
   </div>
-
+  <br>
   <div>
-    <%= form.submit %>
+    <%= form.submit  :class => 'btn btn-success' %>
   </div>
 <% end %>
