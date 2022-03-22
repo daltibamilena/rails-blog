@@ -15,6 +15,11 @@
   transition: all 0.4s;
 }
 
+
+.logo-stack {
+  width: 5em;
+  height: 5em;
+}
 /* for toggle behavior */
 
 #sidebar.active {
