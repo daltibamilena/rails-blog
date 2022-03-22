@@ -8,4 +8,9 @@ def index
       end
 end
 
+def about
+  render template: "application/about"
+
+end
+
 end
