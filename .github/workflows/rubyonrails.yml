@@ -7,16 +7,17 @@ on:
     branches: [ main ]
 
 jobs:
-  test:
-
-    runs-on: ubuntu-latest
+  rspec:
+   runs-on: ubuntu-latest
+    container:
+      image: ruby:3.0.2
 
     services:
       postgres:
         image: postgres:10.8
         env:
           POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
+          POSTGRES_PASSWORD: password
           POSTGRES_DB: postgres
         ports:
         - 5432:5432
@@ -24,12 +25,34 @@ jobs:
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
 
     steps:
-      - uses: actions/checkout@v2
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@359bebbc29cbe6c87da6bc9ea3bc930432750108
-        with:
-          ruby-version: '3.0.2'
-      - name: Install dependencies
-        run: bundle install
-      - name: Run tests
-        run: bundle exec rspec
+    - uses: actions/checkout@v1
+
+    - uses: actions/setup-node@v1
+      with:
+        node-version: '10.x'
+        registry-url: 'https://registry.npmjs.org'
+
+    - name: Gem cache
+      id: cache-bundle
+      uses: actions/cache@v1
+      with:
+        path: vendor/bundle
+        key: bundle-${{ hashFiles('**/Gemfile.lock') }}
+
+    - name: Bundle install
+      env:
+        RAILS_ENV: test
+      run: |
+        gem install bundler
+        bundle install --jobs 4 --retry 3 --path vendor/bundle
+    - name: Install yarn
+      run: npm install -g yarn
+    - name: Setup DB, Run tests
+      env:
+        PGHOST: postgres
+        PGUSER: postgres
+        PGPORT: ${{ job.services.postgres.ports[5432] }}
+        RAILS_ENV: test
+      run: |
+        bin/rails db:create db:schema:load
+        bundle exec rspec
