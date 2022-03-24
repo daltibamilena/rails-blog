@@ -1,59 +1,44 @@
-name: Ruby
+env:
+  RUBY_VERSION: 3.0.2
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: postgres
+  POSTGRES_DB: blog_test
+  DEVISE_JWT_SECRET_KEY: ${{ secrets.DEVISE_JWT_SECRET_KEY }}
 
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-
+name: Rails Specs
+on: [push,pull_request]
 jobs:
-  rspec:
-   runs-on: ubuntu-latest
-
-    container:
-      image: ruby:3.0.2
-
+  rspec-test:
+    name: RSpec
+    runs-on: ubuntu-20.04
     services:
       postgres:
-        image: postgres:10.8
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: password
-          POSTGRES_DB: postgres
+        image: postgres:latest
         ports:
         - 5432:5432
-        # needed because the postgres container does not provide a healthcheck
-        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
-
+        env:
+          POSTGRES_USER: ${{ env.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
     steps:
-    - uses: actions/checkout@v1
-
-    - uses: actions/setup-node@v1
-      with:
-        node-version: '10.x'
-        registry-url: 'https://registry.npmjs.org'
-
-    - name: Gem cache
-      id: cache-bundle
-      uses: actions/cache@v1
-      with:
-        path: vendor/bundle
-        key: bundle-${{ hashFiles('**/Gemfile.lock') }}
-
-    - name: Bundle install
-      env:
-        RAILS_ENV: test
-      run: |
-        gem install bundler
-        bundle install --jobs 4 --retry 3 --path vendor/bundle
-    - name: Install yarn
-      run: npm install -g yarn
-    - name: Setup DB, Run tests
-      env:
-        PGHOST: postgres
-        PGUSER: postgres
-        PGPORT: ${{ job.services.postgres.ports[5432] }}
-        RAILS_ENV: test
-      run: |
-        bin/rails db:create db:schema:load
-        bundle exec rspec
+      - uses: actions/checkout@v1
+      - uses: actions/setup-ruby@v1
+        with:
+          ruby-version: ${{ env.RUBY_VERSION }}
+      - name: Install postgres client
+        run: sudo apt-get install libpq-dev
+      - name: Install dependencies
+        run: |
+          gem install bundler
+          bundler install
+      - name: Create database
+        run: |
+          bundler exec rails db:create RAILS_ENV=test
+          bundler exec rails db:migrate RAILS_ENV=test
+      - name: Run tests
+        run: bundler exec rspec spec/*
+      - name: Upload coverage results
+        uses: actions/upload-artifact@master
+        if: always()
+        with:
+          name: coverage-report
+          path: coverage

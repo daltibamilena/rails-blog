@@ -10,10 +10,12 @@ development:
   <<: *default
   database: blog_development
 
-
 test:
   <<: *default
   database: blog_test
+  password: <%= ENV['POSTGRES_PASSWORD'] %>
+  username: <%= ENV['POSTGRES_USER'] %>
+  host: 127.0.0.1
 
 
 production:
